@@ -212,22 +212,21 @@ class ZooGame:
 
         tk.Button(frame, text="Добавить Животное", command=self.add_animal).grid(row=0, column=0, padx=5)
         tk.Button(frame, text="Добавить Сотрудника", command=self.add_employee).grid(row=0, column=1, padx=5)
-        tk.Button(frame, text="Случайное Животное", command=self.add_random_animal).grid(row=3, column=0, padx=5, pady=5)
-        tk.Button(frame, text="Случайный Сотрудник", command=self.add_random_employee).grid(row=3, column=1, padx=5, pady=5)
         tk.Button(frame, text="Показать Животных", command=self.show_animals).grid(row=1, column=0, padx=5, pady=5)
         tk.Button(frame, text="Показать Сотрудников", command=self.show_employees).grid(row=1, column=1, padx=5, pady=5)
         tk.Button(frame, text="Сохранить", command=self.save_zoo).grid(row=2, column=0, padx=5)
         tk.Button(frame, text="Загрузить", command=self.load_zoo).grid(row=2, column=1, padx=5)
-
+        tk.Button(frame, text="Случайное Животное", command=self.add_random_animal).grid(row=3, column=0, padx=5, pady=5)
+        tk.Button(frame, text="Случайный Сотрудник", command=self.add_random_employee).grid(row=3, column=1, padx=5, pady=5)
 
         self.messages_listbox = tk.Listbox(root, width=80, height=10)
         self.messages_listbox.pack(pady=10)
 
     def add_animal(self):
-        self.handle_input("add_animal Bird Полли 2 0.5")
+        self.handle_input("add_animal Bird Polly 2 0.5")
 
     def add_employee(self):
-        self.handle_input("add_employee Смотритель Алиса")
+        self.handle_input("add_employee ZooKeeper Alice")
 
     def show_animals(self):
         self.handle_input("show_animals")
@@ -243,7 +242,7 @@ class ZooGame:
 
     def add_random_animal(self):
         animal_types = ['Птица', 'Млекопитающее', 'Рептилия']
-        names = ['Чарли', 'Макс', 'Белла', 'Луна', 'Рокки', 'Кеша', 'Рыжик']
+        names = ['Чарли', 'Макс', 'Белла', 'Луна', 'Рокки']
         animal_type = random.choice(animal_types)
         name = random.choice(names)
         age = random.randint(1, 10)
@@ -259,7 +258,7 @@ class ZooGame:
 
     def add_random_employee(self):
         employee_types = ['ZooKeeper', 'Veterinarian']
-        names = ['Алиса', 'Боб', 'Ева', 'Джон', 'Грейс', 'Иван', 'Лилия']
+        names = ['Алиса', 'Боб', 'Ева', 'Джон', 'Грейс']
         employee_type = random.choice(employee_types)
         name = random.choice(names)
         self.handle_input(f"add_employee {employee_type} {name}")
