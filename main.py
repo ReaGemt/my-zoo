@@ -199,13 +199,13 @@ class Zoo:
 class ZooGame:
     def __init__(self, root):
         self.root = root
-        self.root.title("Игра Управление Зоопарком")
+        self.root.title("Мини Городской Зоопарк")
         self.zoo = Zoo(name="Городской Зоопарк")
 
         # Инициализация элементов интерфейса
         self.messages = []
 
-        tk.Label(root, text="Добро пожаловать в игру Управление Зоопарком!", font=("Helvetica", 16)).pack(pady=10)
+        tk.Label(root, text="Добро пожаловать в игру Городской Зоопарк!", font=("Helvetica", 16)).pack(pady=10)
 
         frame = tk.Frame(root)
         frame.pack(pady=10)
@@ -223,10 +223,10 @@ class ZooGame:
         self.messages_listbox.pack(pady=10)
 
     def add_animal(self):
-        self.handle_input("add_animal Bird Polly 2 0.5")
+        self.handle_input("add_animal Bird Поли 2 0.5")
 
     def add_employee(self):
-        self.handle_input("add_employee ZooKeeper Alice")
+        self.handle_input("add_employee ZooKeeper Алиса")
 
     def show_animals(self):
         self.handle_input("show_animals")
