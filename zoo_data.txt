@@ -1,0 +1,4 @@
+Animal:{'type': 'Bird', 'name': 'Polly', 'age': 2, 'wing_span': 0.5}
+Animal:{'type': 'Mammal', 'name': 'Белла', 'age': 8, 'fur_color': 'коричневый'}
+Animal:{'type': 'Mammal', 'name': 'Чарли', 'age': 1, 'fur_color': 'белый'}
+Animal:{'type': 'Reptile', 'name': 'Рокки', 'age': 5, 'scale_type': 'гладкая'}
