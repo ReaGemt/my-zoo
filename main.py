@@ -1,6 +1,7 @@
-import pygame
-import pickle
-import sys
+import tkinter as tk
+from tkinter import messagebox
+import ast
+import random
 
 # Определение классов животных и сотрудников
 class Animal:
@@ -15,7 +16,28 @@ class Animal:
         print(f"{self.name} ест.")
 
     def __str__(self):
-        return f"{self.__class__.__name__} имя {self.name}, возраст {self.age}"
+        return f"{self.get_type()} по имени {self.name}, возраст {self.age}"
+
+    def to_dict(self):
+        return {
+            "type": self.get_type(),
+            "name": self.name,
+            "age": self.age
+        }
+
+    @staticmethod
+    def from_dict(data):
+        if data["type"] == "Птица":
+            return Bird(data["name"], data["age"], data["wing_span"])
+        elif data["type"] == "Млекопитающее":
+            return Mammal(data["name"], data["age"], data["fur_color"])
+        elif data["type"] == "Рептилия":
+            return Reptile(data["name"], data["age"], data["scale_type"])
+        else:
+            return None
+
+    def get_type(self):
+        raise NotImplementedError("Этот метод должен быть переопределен в подклассах")
 
 
 class Bird(Animal):
@@ -24,13 +46,21 @@ class Bird(Animal):
         self.wing_span = wing_span
 
     def make_sound(self):
-        print(f"{self.name} говорит: Чирп!")
+        print(f"{self.name} говорит: Чирик!")
 
     def fly(self):
         print(f"{self.name} летит с размахом крыльев {self.wing_span} метров.")
 
     def __str__(self):
         return super().__str__() + f", с размахом крыльев {self.wing_span} метров"
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["wing_span"] = self.wing_span
+        return data
+
+    def get_type(self):
+        return "Птица"
 
 
 class Mammal(Animal):
@@ -39,10 +69,18 @@ class Mammal(Animal):
         self.fur_color = fur_color
 
     def make_sound(self):
-        print(f"{self.name} говорит: Звук для млекопитающих!")
+        print(f"{self.name} говорит: Общий звук млекопитающего!")
 
     def __str__(self):
         return super().__str__() + f", с цветом меха {self.fur_color}"
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["fur_color"] = self.fur_color
+        return data
+
+    def get_type(self):
+        return "Млекопитающее"
 
 
 class Reptile(Animal):
@@ -51,10 +89,18 @@ class Reptile(Animal):
         self.scale_type = scale_type
 
     def make_sound(self):
-        print(f"{self.name} говорит: Шипение!")
+        print(f"{self.name} говорит: Шшш!")
 
     def __str__(self):
-        return super().__str__() + f", с {self.scale_type} чешуей"
+        return super().__str__() + f", с типом чешуи {self.scale_type}"
+
+    def to_dict(self):
+        data = super().to_dict()
+        data["scale_type"] = self.scale_type
+        return data
+
+    def get_type(self):
+        return "Рептилия"
 
 
 class Employee:
@@ -63,12 +109,27 @@ class Employee:
         self.position = position
 
     def __str__(self):
-        return f"{self.position} имя {self.name}"
+        return f"{self.position} по имени {self.name}"
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "position": self.position
+        }
+
+    @staticmethod
+    def from_dict(data):
+        if data["position"] == "Смотритель зоопарка":
+            return ZooKeeper(data["name"])
+        elif data["position"] == "Ветеринар":
+            return Veterinarian(data["name"])
+        else:
+            return None
 
 
 class ZooKeeper(Employee):
     def __init__(self, name):
-        super().__init__(name, "Персонал зоопарка")
+        super().__init__(name, "Смотритель зоопарка")
 
     def feed_animal(self, animal):
         print(f"{self.name} кормит {animal.name}.")
@@ -96,193 +157,184 @@ class Zoo:
 
     def add_animal(self, animal):
         self.animals.append(animal)
-        print(f"Добавлен {animal} в зоопарк.")
+        self.log_message(f"Добавлено {animal} в зоопарк.")
 
     def add_employee(self, employee):
         self.employees.append(employee)
-        print(f"Добавлен {employee} в зоопарк.")
+        self.log_message(f"Добавлено {employee} в зоопарк.")
 
     def show_animals(self):
-        print(f"Животные в {self.name} в зоопарке:")
-        for animal in self.animals:
-            print(animal)
+        return [str(animal) for animal in self.animals]
 
     def show_employees(self):
-        print(f"Сотрудники в {self.name} в зоопарке:")
-        for employee in self.employees:
-            print(employee)
+        return [str(employee) for employee in self.employees]
 
     def save_to_file(self, filename):
-        with open(filename, 'wb') as file:
-            pickle.dump(self, file)
-        print(f"Данные зоопарка сохранены в {filename}.")
+        with open(filename, 'w') as file:
+            for animal in self.animals:
+                file.write("Animal:" + str(animal.to_dict()) + "\n")
+            for employee in self.employees:
+                file.write("Employee:" + str(employee.to_dict()) + "\n")
+        self.log_message(f"Данные зоопарка сохранены в {filename}.")
 
     @staticmethod
     def load_from_file(filename):
-        with open(filename, 'rb') as file:
-            zoo = pickle.load(file)
-        print(f"Данные зоопарка загружены из {filename}.")
+        zoo = Zoo(name="Городской Зоопарк")
+        with open(filename, 'r') as file:
+            for line in file:
+                if line.startswith("Animal:"):
+                    animal_data = ast.literal_eval(line[len("Animal:"):])
+                    zoo.animals.append(Animal.from_dict(animal_data))
+                elif line.startswith("Employee:"):
+                    employee_data = ast.literal_eval(line[len("Employee:"):])
+                    zoo.employees.append(Employee.from_dict(employee_data))
+        zoo.log_message(f"Данные зоопарка загружены из {filename}.")
         return zoo
+
+    def log_message(self, message):
+        print(message)
 
 
 # Определение игры
 class ZooGame:
-    def __init__(self):
-        pygame.init()
-        self.screen = pygame.display.set_mode((1200, 900))
-        pygame.display.set_caption("Мой мини зоопарк")
-        self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont(None, 32)
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Игра Управление Зоопарком")
         self.zoo = Zoo(name="Городской Зоопарк")
 
         # Инициализация элементов интерфейса
-        self.buttons = {
-            "Добавить Животное": pygame.Rect(50, 100, 320, 50),
-            "Добавить Сотрудника": pygame.Rect(50, 160, 320, 50),
-            "Показать Животных": pygame.Rect(50, 220, 320, 50),
-            "Показать Сотрудников": pygame.Rect(50, 280, 320, 50),
-            "Сохранить": pygame.Rect(50, 340, 320, 50),
-            "Загрузить": pygame.Rect(50, 400, 320, 50)
-        }
         self.messages = []
 
-    def draw_text(self, text, pos, color=(255, 255, 255)):
-        text_surface = self.font.render(text, True, color)
-        self.screen.blit(text_surface, pos)
+        tk.Label(root, text="Добро пожаловать в игру Управление Зоопарком!", font=("Helvetica", 16)).pack(pady=10)
 
-    def main_loop(self):
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    for button in self.buttons:
-                        if self.buttons[button].collidepoint(event.pos):
-                            self.handle_button(button)
+        frame = tk.Frame(root)
+        frame.pack(pady=10)
 
-            self.screen.fill((50, 50, 50))
-            self.draw_text("Добро пожаловать в игру Мой мини зоопарк!", (150, 20), (0, 255, 0))
+        tk.Button(frame, text="Добавить Животное", command=self.add_animal).grid(row=0, column=0, padx=5)
+        tk.Button(frame, text="Добавить Сотрудника", command=self.add_employee).grid(row=0, column=1, padx=5)
+        tk.Button(frame, text="Случайное Животное", command=self.add_random_animal).grid(row=3, column=0, padx=5, pady=5)
+        tk.Button(frame, text="Случайный Сотрудник", command=self.add_random_employee).grid(row=3, column=1, padx=5, pady=5)
+        tk.Button(frame, text="Показать Животных", command=self.show_animals).grid(row=1, column=0, padx=5, pady=5)
+        tk.Button(frame, text="Показать Сотрудников", command=self.show_employees).grid(row=1, column=1, padx=5, pady=5)
+        tk.Button(frame, text="Сохранить", command=self.save_zoo).grid(row=2, column=0, padx=5)
+        tk.Button(frame, text="Загрузить", command=self.load_zoo).grid(row=2, column=1, padx=5)
 
-            for button in self.buttons:
-                pygame.draw.rect(self.screen, (0, 128, 255), self.buttons[button])
-                self.draw_text(button, (self.buttons[button].x + 10, self.buttons[button].y + 10))
 
-            for i, message in enumerate(self.messages[-5:]):
-                self.draw_text(message, (320, 100 + i * 30), (255, 255, 0))
+        self.messages_listbox = tk.Listbox(root, width=80, height=10)
+        self.messages_listbox.pack(pady=10)
 
-            pygame.display.flip()
-            self.clock.tick(30)
+    def add_animal(self):
+        self.handle_input("add_animal Bird Полли 2 0.5")
 
-    def handle_button(self, button):
-        if button == "Добавить Животное":
-            self.add_animal_dialog()
-        elif button == "Добавить Сотрудника":
-            self.add_employee_dialog()
-        elif button == "Показать Животных":
-            self.show_animals()
-        elif button == "Показать Сотрудников":
-            self.show_employees()
-        elif button == "Сохранить":
-            self.save_zoo()
-        elif button == "Загрузить":
-            self.load_zoo()
-
-    def get_user_input(self, prompt):
-        pygame.font.init()
-        input_box = pygame.Rect(300, 450, 200, 50)  # Увеличиваем координату y на 50 пикселей
-        color_inactive = pygame.Color('lightskyblue3')
-        color_active = pygame.Color('dodgerblue2')
-        color = color_inactive
-        active = False
-        text = ''
-        done = False
-
-        while not done:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if input_box.collidepoint(event.pos):
-                        active = not active
-                    else:
-                        active = False
-                    color = color_active if active else color_inactive
-                if event.type == pygame.KEYDOWN:
-                    if active:
-                        if event.key == pygame.K_RETURN:
-                            done = True
-                        elif event.key == pygame.K_BACKSPACE:
-                            text = text[:-1]
-                        else:
-                            text += event.unicode
-
-            self.screen.fill((50, 50, 50))
-            self.draw_text(prompt, (50, 400), (255, 255, 255))  # Перемещаем текст на новую строку
-            txt_surface = self.font.render(text, True, color)
-            width = max(200, txt_surface.get_width() + 10)
-            input_box.w = width
-            self.screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
-            pygame.draw.rect(self.screen, color, input_box, 2)
-
-            pygame.display.flip()
-            self.clock.tick(30)
-
-        return text
-
-    def add_animal_dialog(self):
-        animal_type = self.get_user_input("Введите тип животного (Птица, Млекопитающее, Рептилия): ")
-        name = self.get_user_input("Введите имя животного: ")
-        age = int(self.get_user_input("Введите возраст животного: "))
-        if animal_type == "Птица":
-            wing_span = float(self.get_user_input("Введите размах крыльев: "))
-            animal = Bird(name, age, wing_span)
-        elif animal_type == "Млекопитающее":
-            fur_color = self.get_user_input("Введите цвет меха: ")
-            animal = Mammal(name, age, fur_color)
-        elif animal_type == "Рептилия":
-            scale_type = self.get_user_input("Введите тип чешуи: ")
-            animal = Reptile(name, age, scale_type)
-        else:
-            self.messages.append("Неверный тип животного!")
-            return
-        self.zoo.add_animal(animal)
-        self.messages.append(f"Добавлено {animal}")
-
-    def add_employee_dialog(self):
-        employee_type = self.get_user_input("Введите тип сотрудника (Уход, Ветеринар): ")
-        name = self.get_user_input("Введите имя сотрудника: ")
-        if employee_type == "Уход":
-            employee = ZooKeeper(name)
-        elif employee_type == "Ветеринар":
-            employee = Veterinarian(name)
-        else:
-            self.messages.append("Неверный тип сотрудника!")
-            return
-        self.zoo.add_employee(employee)
-        self.messages.append(f"Добавлен {employee}")
+    def add_employee(self):
+        self.handle_input("add_employee Смотритель Алиса")
 
     def show_animals(self):
-        self.messages.append("Животные в зоопарке:")
-        for animal in self.zoo.animals:
-            self.messages.append(str(animal))
+        self.handle_input("show_animals")
 
     def show_employees(self):
-        self.messages.append("Сотрудники в зоопарке:")
-        for employee in self.zoo.employees:
-            self.messages.append(str(employee))
+        self.handle_input("show_employees")
 
     def save_zoo(self):
-        filename = self.get_user_input("Введите имя файла для сохранения: ")
-        self.zoo.save_to_file(filename)
-        self.messages.append(f"Зоопарк сохранен в {filename}")
+        self.handle_input("save zoo_data.txt")
 
     def load_zoo(self):
-        filename = self.get_user_input("Введите имя файла для загрузки: ")
-        self.zoo = Zoo.load_from_file(filename)
-        self.messages.append(f"Зоопарк загружен из {filename}")
+        self.handle_input("load zoo_data.txt")
 
+    def add_random_animal(self):
+        animal_types = ['Птица', 'Млекопитающее', 'Рептилия']
+        names = ['Чарли', 'Макс', 'Белла', 'Луна', 'Рокки', 'Кеша', 'Рыжик']
+        animal_type = random.choice(animal_types)
+        name = random.choice(names)
+        age = random.randint(1, 10)
+        if animal_type == 'Птица':
+            wing_span = round(random.uniform(0.5, 2.0), 1)
+            self.handle_input(f"add_animal Bird {name} {age} {wing_span}")
+        elif animal_type == 'Млекопитающее':
+            fur_color = random.choice(['коричневый', 'черный', 'белый', 'серый'])
+            self.handle_input(f"add_animal Mammal {name} {age} {fur_color}")
+        elif animal_type == 'Рептилия':
+            scale_type = random.choice(['гладкая', 'грубая'])
+            self.handle_input(f"add_animal Reptile {name} {age} {scale_type}")
+
+    def add_random_employee(self):
+        employee_types = ['ZooKeeper', 'Veterinarian']
+        names = ['Алиса', 'Боб', 'Ева', 'Джон', 'Грейс', 'Иван', 'Лилия']
+        employee_type = random.choice(employee_types)
+        name = random.choice(names)
+        self.handle_input(f"add_employee {employee_type} {name}")
+
+    def handle_input(self, input_text):
+        commands = input_text.split()
+        if not commands:
+            return
+
+        command = commands[0].lower()
+        if command == "add_animal":
+            if len(commands) >= 5:
+                animal_type = commands[1].capitalize()
+                name = commands[2]
+                age = int(commands[3])
+                if animal_type == "Bird" and len(commands) == 5:
+                    wing_span = float(commands[4])
+                    animal = Bird(name, age, wing_span)
+                elif animal_type == "Mammal" and len(commands) == 5:
+                    fur_color = commands[4]
+                    animal = Mammal(name, age, fur_color)
+                elif animal_type == "Reptile" and len(commands) == 5:
+                    scale_type = commands[4]
+                    animal = Reptile(name, age, scale_type)
+                else:
+                    return
+                self.zoo.add_animal(animal)
+                self.messages_listbox.insert(tk.END, f"Добавлено {animal}")
+
+        elif command == "add_employee":
+            if len(commands) >= 3:
+                employee_type = commands[1].capitalize()
+                name = commands[2]
+                if employee_type == "Zookeeper":
+                    employee = ZooKeeper(name)
+                elif employee_type == "Veterinarian":
+                    employee = Veterinarian(name)
+                else:
+                    return
+                self.zoo.add_employee(employee)
+                self.messages_listbox.insert(tk.END, f"Добавлено {employee}")
+
+        elif command == "show_animals":
+            animals = self.zoo.show_animals()
+            self.messages_listbox.insert(tk.END, "Показаны животные:")
+            for animal in animals:
+                self.messages_listbox.insert(tk.END, animal)
+
+        elif command == "show_employees":
+            employees = self.zoo.show_employees()
+            self.messages_listbox.insert(tk.END, "Показаны сотрудники:")
+            for employee in employees:
+                self.messages_listbox.insert(tk.END, employee)
+
+        elif command == "save":
+            if len(commands) == 2:
+                filename = commands[1]
+                self.zoo.save_to_file(filename)
+                self.messages_listbox.insert(tk.END, f"Данные зоопарка сохранены в {filename}")
+
+        elif command == "load":
+            if len(commands) == 2:
+                filename = commands[1]
+                try:
+                    self.zoo = Zoo.load_from_file(filename)
+                    self.messages_listbox.insert(tk.END, f"Данные зоопарка загружены из {filename}")
+                except FileNotFoundError:
+                    self.messages_listbox.insert(tk.END, f"Файл {filename} не найден.")
+
+        else:
+            self.messages_listbox.insert(tk.END, f"Неизвестная команда: {command}")
+
+
+# Запуск игры
 if __name__ == "__main__":
-    game = ZooGame()
-    game.main_loop()
+    root = tk.Tk()
+    game = ZooGame(root)
+    root.mainloop()
